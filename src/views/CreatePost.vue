@@ -30,9 +30,9 @@
 
 <script lang="ts">
 import { defineComponent, ref } from 'vue'
-// import { useStore } from 'vuex'
-// import { useRouter } from 'vue-router'
-// import { GlobalDataProps } from '../store/index'
+import { useStore } from 'vuex'
+import { useRouter } from 'vue-router'
+import { GlobalDataProps, PostProps } from '../store'
 import ValidateForm from '../components/ValidateForm.vue'
 import ValidateInput, { RulesProp } from '../components/ValidateInput.vue'
 export default defineComponent({
@@ -41,8 +41,8 @@ export default defineComponent({
     ValidateInput
   },
   setup() {
-    // const router = useRouter()
-    // const store = useStore<GlobalDataProps>()
+    const router = useRouter()
+    const store = useStore<GlobalDataProps>()
     const titleVal = ref('')
     const contentVal = ref('')
     const titleRules: RulesProp = [
@@ -53,6 +53,16 @@ export default defineComponent({
     ]
     const onFormSubmit = (result: boolean) => {
       if (result) {
+        const { column } = store.state.user
+        if (column) {
+          const newPost: PostProps = {
+            title: titleVal.value,
+            content: contentVal.value,
+            column
+          }
+          store.commit('createPost', newPost)
+          router.push({ name: 'column', params: { id: column } })
+        }
       }
     }
     return {

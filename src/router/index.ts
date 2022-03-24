@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import store from '../store/index'
+import store from '../store'
 
 const routerHistory = createWebHistory()
 const router = createRouter({
@@ -26,10 +26,18 @@ const router = createRouter({
       name: 'create',
       component: () => import('../views/CreatePost.vue'),
       meta: { requiredLogin: true }
+    },
+    {
+      path: '/signup',
+      name: 'signup',
+      component: () => import('../views/Signup.vue')
     }
   ]
 })
 router.beforeEach((to, from, next) => {
+  console.log('打印state', store.state)
+  console.log('打印state.user', store.state.user)
+
   if (to.meta.requiredLogin && !store.state.user.isLogin) {
     next({ name: 'login' })
   } else if (to.meta.redirectAlreadyLogin && store.state.user.isLogin) {
