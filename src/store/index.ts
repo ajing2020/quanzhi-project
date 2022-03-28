@@ -1,5 +1,13 @@
 import { Commit, createStore } from 'vuex'
 import axios from 'axios'
+
+export interface ResponseType<P = Record<string, unknown>> {
+  code: number
+  msg: string
+  data: P
+}
+
+// 用户类型
 export interface UserProps {
   isLogin: boolean
   nickName?: string
@@ -8,28 +16,34 @@ export interface UserProps {
   email?: string
   description?: string
 }
-interface ImageProps {
+// 图片类型
+export interface ImageProps {
   _id?: string
   url?: string
   createdAt?: string
 }
+// 列表类型
 export interface ColumnProps {
   _id: string
   title: string
   avatar?: ImageProps
   description: string
 }
+// 文章类型
 export interface PostProps {
   title: string
   excerpt?: string
   content?: string
-  image?: ImageProps
+  image?: ImageProps | string
   column: string
+  author?: string
 }
+// 全局错误类型
 export interface GlobalErrorProps {
   status: boolean
   message?: string
 }
+// 全局数据类型
 export interface GlobalDataProps {
   error: GlobalErrorProps
   token: string
@@ -38,7 +52,7 @@ export interface GlobalDataProps {
   posts: PostProps[]
   user: UserProps
 }
-
+// get方法
 const getAndCommit = async (
   url: string,
   mutationName: string,
@@ -46,7 +60,9 @@ const getAndCommit = async (
 ) => {
   const { data } = await axios.get(url)
   commit(mutationName, data)
+  return data
 }
+// post方法
 const postAndCommit = async (
   url: string,
   mutationName: string,
@@ -65,7 +81,9 @@ const store = createStore<GlobalDataProps>({
     loading: false,
     columns: [],
     posts: [],
-    user: { isLogin: false }
+    user: JSON.parse(
+      localStorage.getItem('user') || JSON.stringify({ isLogin: false })
+    )
   },
   mutations: {
     createPost(state, newPost) {
@@ -87,15 +105,19 @@ const store = createStore<GlobalDataProps>({
       state.error = e
     },
     fetchCurrentUser(state, rowData) {
-      console.log(1123)
-
       state.user = { isLogin: true, ...rowData.data }
+      localStorage.setItem('user', JSON.stringify(state.user))
     },
     login(state, rowData) {
       const { token } = rowData.data
       state.token = token
       localStorage.setItem('token', token)
       axios.defaults.headers.common.Authorization = `Bearer ${token}`
+    },
+    logout(state) {
+      state.token = ''
+      localStorage.removeItem('token')
+      delete axios.defaults.headers.common.Authorization
     }
   },
   actions: {
@@ -114,22 +136,13 @@ const store = createStore<GlobalDataProps>({
     login({ commit }, payload) {
       return postAndCommit('/user/login', 'login', commit, { ...payload })
     },
+    createPost({ commit }, payload) {
+      return postAndCommit('/posts', 'createPost', commit, { ...payload })
+    },
     loginAndFetch({ dispatch }, loginData) {
       return dispatch('login', loginData).then(() => {
         return dispatch('fetchCurrentUser')
       })
-    }
-  },
-  getters: {
-    getColumnById(state) {
-      return (id: string) => {
-        return state.columns.find((c) => c._id === id)
-      }
-    },
-    getPostsByCid(state) {
-      return (cid: string) => {
-        return state.posts.filter((post) => post.column === cid)
-      }
     }
   }
 })

@@ -40,7 +40,6 @@ export default defineComponent({
     }
     const hide = () => {
       isVisible.value = false
-      console.log(1)
       context.emit('close-message', true)
     }
     return {

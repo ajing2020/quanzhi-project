@@ -3,7 +3,7 @@
     <a
       class="navbar-brand"
       href="#"
-    >者也专栏</a>
+    >全知专栏</a>
     <ul
       v-if="!user.isLogin"
       class="list-inline mb-0"
