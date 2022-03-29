@@ -2,7 +2,7 @@
   <nav class="navbar navbar-dark bg-primary justify-content-between mb-4 px-4">
     <a
       class="navbar-brand"
-      href="#"
+      href="/"
     >全知专栏</a>
     <ul
       v-if="!user.isLogin"

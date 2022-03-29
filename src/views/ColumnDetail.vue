@@ -26,6 +26,7 @@ import { useRoute } from 'vue-router'
 import { useStore } from 'vuex'
 import { GlobalDataProps } from '../store'
 import PostList from '../components/PostList.vue'
+import { objToArr } from '@/helper'
 export default defineComponent({
   name: 'ColumnDetail',
   components: {
@@ -39,11 +40,11 @@ export default defineComponent({
       store.dispatch('fetchColumn', currentId)
       store.dispatch('fetchPosts', currentId)
     })
-    const column = computed(() =>
-      store.state.columns.find((c) => c._id === currentId)
-    )
+    const column = computed(() => store.getters.getColumnById(currentId))
+    // const postList = computed(() => store.getters.getPostsByCid(currentId))
+    // const column = computed(() => store.state.columns[currentId])
     const postList = computed(() =>
-      store.state.posts.filter((post) => post.column === currentId)
+      objToArr(store.state.posts).filter((post) => post.column === currentId)
     )
     return {
       column,

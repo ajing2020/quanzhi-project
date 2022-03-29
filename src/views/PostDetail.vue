@@ -80,7 +80,9 @@ export default defineComponent({
     onMounted(() => {
       store.dispatch('fetchPost', currentId)
     })
-    const currentPost = computed<PostProps>(() => store.state.currentPost)
+    const currentPost = computed<PostProps>(() =>
+      store.getters.getCurrentPost(currentId)
+    )
     const currentHTML = computed(() => {
       if (currentPost.value && currentPost.value.content) {
         return md.render(currentPost.value.content)

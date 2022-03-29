@@ -1,5 +1,6 @@
 import { Commit, createStore } from 'vuex'
 import axios, { AxiosRequestConfig } from 'axios'
+import { objToArr, arrToObj } from '../helper'
 
 export interface ResponseType<P = Record<string, unknown>> {
   code: number
@@ -41,6 +42,9 @@ export interface PostProps {
   author?: string | UserProps
   isHTML?: boolean
 }
+interface ListProps<P> {
+  [id: string]: P
+}
 // 全局错误类型
 export interface GlobalErrorProps {
   status: boolean
@@ -51,10 +55,9 @@ export interface GlobalDataProps {
   error: GlobalErrorProps
   token: string
   loading: boolean
-  columns: ColumnProps[]
-  posts: PostProps[]
+  columns: ListProps<ColumnProps>
+  posts: ListProps<PostProps>
   user: UserProps
-  currentPost: PostProps
 }
 // get方法
 const getAndCommit = async (
@@ -99,41 +102,33 @@ const store = createStore<GlobalDataProps>({
     error: { status: false },
     token: localStorage.getItem('token') || '',
     loading: false,
-    columns: [],
-    posts: [],
+    columns: {},
+    posts: {},
     user: JSON.parse(
       localStorage.getItem('user') || JSON.stringify({ isLogin: false })
-    ),
-    currentPost: { title: '', column: '' }
+    )
   },
   mutations: {
     createPost(state, newPost) {
-      state.posts.push(newPost)
+      state.posts[newPost._id] = newPost
     },
     deletePost(state, { data }) {
-      console.log('deletePost data', data)
-      state.posts = state.posts.filter((post) => post._id !== data._id)
+      delete state.posts[data._id]
     },
     fetchColumns(state, rawData) {
-      state.columns = rawData.data.list
+      state.columns = arrToObj(rawData.data.list)
     },
     fetchColumn(state, rawData) {
-      state.columns = [rawData.data]
+      state.columns[rawData.data._id] = rawData.data
     },
     fetchPosts(state, rawData) {
-      state.posts = rawData.data.list
+      state.posts = arrToObj(rawData.data.list)
     },
-    fetchPost(state, rowData) {
-      state.currentPost = rowData.data
+    fetchPost(state, rawData) {
+      state.posts[rawData.data._id] = rawData.data
     },
     updatePost(state, { data }) {
-      state.posts = state.posts.map((post) => {
-        if (post._id === data._id) {
-          return data
-        } else {
-          return post
-        }
-      })
+      state.posts[data._id] = data
     },
     setLoading(state, status) {
       state.loading = status
@@ -143,7 +138,6 @@ const store = createStore<GlobalDataProps>({
     },
     fetchCurrentUser(state, rowData) {
       state.user = { isLogin: true, ...rowData.data }
-      localStorage.setItem('user', JSON.stringify(state.user))
     },
     login(state, rowData) {
       const { token } = rowData.data
@@ -197,6 +191,26 @@ const store = createStore<GlobalDataProps>({
       return dispatch('login', loginData).then(() => {
         return dispatch('fetchCurrentUser')
       })
+    }
+  },
+  getters: {
+    getColumns: (state) => {
+      return objToArr(state.columns)
+    },
+    getColumnById(state) {
+      return (id: string) => {
+        return state.columns[id]
+      }
+    },
+    getPostsByCid(state) {
+      return (cid: string) => {
+        return objToArr(state.posts).filter(
+          (post: PostProps) => post.column === cid
+        )
+      }
+    },
+    getCurrentPost: (state) => (id: string) => {
+      return state.posts[id]
     }
   }
 })
