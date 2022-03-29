@@ -42,11 +42,8 @@ export default defineComponent({
       return props.list.map((column) => {
         if (!column.avatar) {
           column.avatar = {
-            url: require('../assets/pic.jpg')
+            url: require('../assets/avatar.jpg')
           }
-        } else {
-          column.avatar.url =
-            column.avatar.url + '?x-oss-process=image/resize,m_pad,h_50,w_50'
         }
         return column
       })

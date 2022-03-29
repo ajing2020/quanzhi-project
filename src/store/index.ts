@@ -55,7 +55,7 @@ export interface GlobalDataProps {
   error: GlobalErrorProps
   token: string
   loading: boolean
-  columns: ListProps<ColumnProps>
+  columns: { data: ListProps<ColumnProps>; total: number }
   posts: ListProps<PostProps>
   user: UserProps
 }
@@ -102,7 +102,7 @@ const store = createStore<GlobalDataProps>({
     error: { status: false },
     token: localStorage.getItem('token') || '',
     loading: false,
-    columns: {},
+    columns: { data: {}, total: 1 },
     posts: {},
     user: JSON.parse(
       localStorage.getItem('user') || JSON.stringify({ isLogin: false })
@@ -116,10 +116,18 @@ const store = createStore<GlobalDataProps>({
       delete state.posts[data._id]
     },
     fetchColumns(state, rawData) {
-      state.columns = arrToObj(rawData.data.list)
+      const { data } = state.columns
+      const { list, count } = rawData.data
+      state.columns = {
+        data: {
+          ...data,
+          ...arrToObj(list)
+        },
+        total: count
+      }
     },
     fetchColumn(state, rawData) {
-      state.columns[rawData.data._id] = rawData.data
+      state.columns.data[rawData.data._id] = rawData.data
     },
     fetchPosts(state, rawData) {
       state.posts = arrToObj(rawData.data.list)
@@ -155,8 +163,13 @@ const store = createStore<GlobalDataProps>({
     }
   },
   actions: {
-    fetchColumns({ commit }) {
-      return getAndCommit('/columns', 'fetchColumns', commit)
+    fetchColumns({ commit }, params = {}) {
+      const { currentPage = 1, pageSize = 6 } = params
+      return getAndCommit(
+        `/columns?currentPage=${currentPage}&pageSize=${pageSize}`,
+        'fetchColumns',
+        commit
+      )
     },
     fetchColumn({ commit }, cid) {
       return getAndCommit(`/columns/${cid}`, 'fetchColumn', commit)
@@ -195,11 +208,11 @@ const store = createStore<GlobalDataProps>({
   },
   getters: {
     getColumns: (state) => {
-      return objToArr(state.columns)
+      return objToArr(state.columns.data)
     },
     getColumnById(state) {
       return (id: string) => {
-        return state.columns[id]
+        return state.columns.data[id]
       }
     },
     getPostsByCid(state) {
