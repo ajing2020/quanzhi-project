@@ -25,7 +25,14 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, reactive, PropType, onMounted, computed } from 'vue'
+import {
+  defineComponent,
+  reactive,
+  PropType,
+  onMounted,
+  computed,
+  watch
+} from 'vue'
 import { emitter } from './ValidateForm.vue'
 const emailReg =
   /^[a-zA-Z0-9.!#$%&’*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/
@@ -57,6 +64,12 @@ export default defineComponent({
       error: false,
       message: ''
     })
+    watch(
+      () => props.modelValue,
+      (newValue) => {
+        inputRef.val = newValue || ''
+      }
+    )
     const validateInput = () => {
       if (props.rules) {
         const allPassed = props.rules.every((rule) => {

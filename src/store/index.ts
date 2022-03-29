@@ -1,5 +1,5 @@
 import { Commit, createStore } from 'vuex'
-import axios from 'axios'
+import axios, { AxiosRequestConfig } from 'axios'
 
 export interface ResponseType<P = Record<string, unknown>> {
   code: number
@@ -31,12 +31,15 @@ export interface ColumnProps {
 }
 // 文章类型
 export interface PostProps {
+  _id?: string
   title: string
   excerpt?: string
   content?: string
   image?: ImageProps | string
+  createdAt?: string
   column: string
-  author?: string
+  author?: string | UserProps
+  isHTML?: boolean
 }
 // 全局错误类型
 export interface GlobalErrorProps {
@@ -51,6 +54,7 @@ export interface GlobalDataProps {
   columns: ColumnProps[]
   posts: PostProps[]
   user: UserProps
+  currentPost: PostProps
 }
 // get方法
 const getAndCommit = async (
@@ -73,6 +77,22 @@ const postAndCommit = async (
   commit(mutationName, data)
   return data
 }
+// 把POST和GET方法进行合并
+const asyncAndCommit = async (
+  url: string,
+  mutationName: string,
+  commit: Commit,
+  config: AxiosRequestConfig = { method: 'GET' },
+  extraData?: unknown
+) => {
+  const { data } = await axios(url, config)
+  if (extraData) {
+    commit(mutationName, { data, extraData })
+  } else {
+    commit(mutationName, data)
+  }
+  return data
+}
 
 const store = createStore<GlobalDataProps>({
   state: {
@@ -83,11 +103,16 @@ const store = createStore<GlobalDataProps>({
     posts: [],
     user: JSON.parse(
       localStorage.getItem('user') || JSON.stringify({ isLogin: false })
-    )
+    ),
+    currentPost: { title: '', column: '' }
   },
   mutations: {
     createPost(state, newPost) {
       state.posts.push(newPost)
+    },
+    deletePost(state, { data }) {
+      console.log('deletePost data', data)
+      state.posts = state.posts.filter((post) => post._id !== data._id)
     },
     fetchColumns(state, rawData) {
       state.columns = rawData.data.list
@@ -97,6 +122,18 @@ const store = createStore<GlobalDataProps>({
     },
     fetchPosts(state, rawData) {
       state.posts = rawData.data.list
+    },
+    fetchPost(state, rowData) {
+      state.currentPost = rowData.data
+    },
+    updatePost(state, { data }) {
+      state.posts = state.posts.map((post) => {
+        if (post._id === data._id) {
+          return data
+        } else {
+          return post
+        }
+      })
     },
     setLoading(state, status) {
       state.loading = status
@@ -115,8 +152,11 @@ const store = createStore<GlobalDataProps>({
       axios.defaults.headers.common.Authorization = `Bearer ${token}`
     },
     logout(state) {
-      state.token = ''
+      state.user = { isLogin: false }
       localStorage.removeItem('token')
+      localStorage.removeItem('user')
+      state.token = ''
+
       delete axios.defaults.headers.common.Authorization
     }
   },
@@ -130,6 +170,9 @@ const store = createStore<GlobalDataProps>({
     fetchPosts({ commit }, cid) {
       return getAndCommit(`/columns/${cid}/posts`, 'fetchPosts', commit)
     },
+    fetchPost({ commit }, id) {
+      return getAndCommit(`/posts/${id}`, 'fetchPost', commit)
+    },
     fetchCurrentUser({ commit }) {
       return getAndCommit('/user/current', 'fetchCurrentUser', commit)
     },
@@ -138,6 +181,17 @@ const store = createStore<GlobalDataProps>({
     },
     createPost({ commit }, payload) {
       return postAndCommit('/posts', 'createPost', commit, { ...payload })
+    },
+    updatePost({ commit }, { id, payload }) {
+      return asyncAndCommit(`/posts/${id}`, 'updatePost', commit, {
+        method: 'patch',
+        data: payload
+      })
+    },
+    deletePost({ commit }, id) {
+      return asyncAndCommit(`/posts/${id}`, 'deletePost', commit, {
+        method: 'delete'
+      })
     },
     loginAndFetch({ dispatch }, loginData) {
       return dispatch('login', loginData).then(() => {

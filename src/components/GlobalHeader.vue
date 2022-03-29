@@ -29,6 +29,12 @@
               class="dropdown-item"
             >新建文章</a>
           </dropdown-item>
+          <dropdown-item>
+            <router-link
+              :to="`/column/${user.column}`"
+              class="dropdown-item"
+            >我的专栏</router-link>
+          </dropdown-item>
           <dropdown-item disabled>
             <a
               href="#"
@@ -39,6 +45,7 @@
             <a
               href="#"
               class="dropdown-item"
+              @click.prevent="logout"
             >退出登录</a>
           </dropdown-item>
         </Dropdown>
@@ -48,16 +55,25 @@
 </template>
 
 <script lang="ts">
+import { useStore } from 'vuex'
 import { defineComponent, PropType } from 'vue'
 import Dropdown from './Dropdown.vue'
 import DropdownItem from './DropdownItem.vue'
-import { UserProps } from '../store'
-
+import { GlobalDataProps, UserProps } from '../store'
 export default defineComponent({
   name: 'GlobalHeader',
   components: {
     Dropdown,
     DropdownItem
+  },
+  setup() {
+    const store = useStore<GlobalDataProps>()
+    const logout = () => {
+      store.commit('logout')
+    }
+    return {
+      logout
+    }
   },
   props: {
     user: {
