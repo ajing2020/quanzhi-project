@@ -21,5 +21,6 @@ module.exports = {
     headers: {
       'Access-Control-Allow-Origin': '*'
     }
-  }
+  },
+  publicPath: 'https://ajing2020.github.io/quanzhi-preview/'
 }
