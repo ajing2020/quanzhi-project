@@ -1,26 +1,21 @@
 module.exports = {
+  // 服务项配置
   devServer: {
-    overlay: {
-      warnings: true,
-      errors: true
-    },
     host: 'localhost',
     port: 8080,
     https: false,
-    open: true,
-    hotOnly: true,
+    open: false,
     proxy: {
       '/api': {
-        target: 'http://api.vikingship.xyz/api/', // 跨域接口的地址
+        target: 'http://api.vikingship.xyz/api',
+        // 是否允许跨域,在本地会创建一个虚拟服务端，然后发送请求的数据
         changeOrigin: true,
+        // 并同时接收请求的数据，这样服务端和服务端进行数据的交互就不会有跨域问题
+        ws: true,
         pathRewrite: {
           '^/api': ''
         }
       }
-    },
-    headers: {
-      'Access-Control-Allow-Origin': '*'
     }
-  },
-  publicPath: './'
+  }
 }
